@@ -14,7 +14,6 @@ lines = [line.strip() for line in lines if line.strip() != '']
 
 
 #Cleaning the texts
-
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
@@ -40,11 +39,15 @@ def clean_text(text):
 
 
 #test_line = lines[4]
-# Since it is a test , will only try on 100,000 entries.
-#This is a very slow process..
-#TODO , could be parallelized   
+# Since it is a test , will only try on 5000 entries.
+
+from joblib import Parallel, delayed
+import multiprocessing
+num_cores = multiprocessing.cpu_count()
+
 corpus = []
-for i in range(0,5000):
+def clean_corpus(i):
+    #for i in range(0,5000):
     line = re.sub('[^a-zA-Z]',' ',lines[i])
     line = line.lower()
     line = line.split()
@@ -55,7 +58,12 @@ for i in range(0,5000):
     line = [ps.stem(word) for word in line if not word in set(stopwords.words('english'))]
     #Joining words back
     line = ' '.join(line)
-    corpus.append([clean_text(line)])
+    #corpus.append(clean_text(line))
+    return clean_text(line) #corpus
+
+#This puts it into a list for me.
+results = Parallel(n_jobs=num_cores)(delayed(clean_corpus)(i) for i in range(0,5000))
+corpus = results[:]
 
 ############### Part 2 - Creating a Word2Vec model ###############
 #The corpus needs to be a list of lists
